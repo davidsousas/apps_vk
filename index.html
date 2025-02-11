@@ -50,7 +50,7 @@
     <h2>Lista de Espera - Check-in</h2>
     <div class="container">
         <label>Nome do Responsável: <input type="text" id="responsavel"></label>
-        <label>Número do WhatsApp: <input type="text" id="whatsapp"></label>
+        <label>Número do WhatsApp: <input type="text" id="whatsapp" maxlength="15"></label>
         <label>Idade da Criança: 
             <select id="idade">
                 <option value="" selected disabled>Selecione a idade</option>
@@ -112,7 +112,7 @@
 
         function adicionarNaLista() {
             const responsavel = document.getElementById("responsavel").value.trim();
-            const whatsapp = document.getElementById("whatsapp").value.trim();
+            const whatsapp = document.getElementById("whatsapp").value.replace(/\D/g, ''); // Remove caracteres não numéricos
             const idade = document.getElementById("idade").value;
             
             if (!responsavel || !whatsapp || !idade) {
@@ -144,7 +144,7 @@
                 }
                 novaLinha.innerHTML = `
                     <td>${item.responsavel}</td>
-                    <td><a href="https://wa.me/55${item.whatsapp.replace(/\D/g, '')}" target="_blank">${item.whatsapp}</a></td>
+                    <td><a href="https://wa.me/55${item.whatsapp}" target="_blank">${formatarNumero(item.whatsapp)}</a></td>
                     <td>${item.idade}</td>
                     <td>${item.salinha}</td>
                     <td><button onclick="marcarContato(${index})">✔️</button></td>
@@ -176,6 +176,25 @@
                 alert("Senha incorreta!");
             }
         }
+
+        function formatarNumero(numero) {
+            return numero.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
+        }
+
+        // Aplicar máscara ao campo de WhatsApp
+        document.getElementById("whatsapp").addEventListener("input", function (e) {
+            let numero = e.target.value.replace(/\D/g, ""); // Remove tudo que não for número
+            if (numero.length > 11) numero = numero.slice(0, 11); // Limita a 11 dígitos
+            if (numero.length > 10) {
+                e.target.value = `(${numero.slice(0,2)}) ${numero.slice(2,7)}-${numero.slice(7)}`;
+            } else if (numero.length > 6) {
+                e.target.value = `(${numero.slice(0,2)}) ${numero.slice(2,6)}-${numero.slice(6)}`;
+            } else if (numero.length > 2) {
+                e.target.value = `(${numero.slice(0,2)}) ${numero.slice(2)}`;
+            } else if (numero.length > 0) {
+                e.target.value = `(${numero}`;
+            }
+        });
 
         window.onload = carregarLista;
     </script>
