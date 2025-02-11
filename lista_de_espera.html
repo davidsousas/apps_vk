@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Espera - Check-in</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 10px;
+            text-align: center;
+        }
+        .container {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .contatado {
+            background-color: #d4edda;
+        }
+        input, select, button {
+            margin: 5px;
+            padding: 5px;
+            font-size: 16px;
+        }
+        @media (max-width: 600px) {
+            table {
+                font-size: 12px;
+            }
+            input, select, button {
+                width: 100%;
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h2>Lista de Espera - Check-in</h2>
+    <div class="container">
+        <label>Nome do Responsável: <input type="text" id="responsavel"></label>
+        <label>Número do WhatsApp: <input type="text" id="whatsapp"></label>
+        <label>Idade da Criança: 
+            <select id="idade">
+                <option value="" selected disabled>Selecione a idade</option>
+                <option value="0">Menos de 1 ano</option>
+                <option value="1">1 ano</option>
+                <option value="2">2 anos</option>
+                <option value="3">3 anos</option>
+                <option value="4">4 anos</option>
+                <option value="5">5 anos</option>
+                <option value="6">6 anos</option>
+                <option value="7">7 anos</option>
+                <option value="8">8 anos</option>
+                <option value="9">9 anos</option>
+                <option value="10">10 anos</option>
+                <option value="11">11 anos</option>
+            </select>
+        </label>
+        <button onclick="adicionarNaLista()">Adicionar</button>
+        <button onclick="limparCampos()">Limpar</button>
+        <button onclick="resetarLista()">Resetar Lista</button>
+    </div>
+    
+    <div class="container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome do Responsável</th>
+                    <th>WhatsApp</th>
+                    <th>Idade</th>
+                    <th>Salinha</th>
+                    <th>Contato</th>
+                </tr>
+            </thead>
+            <tbody id="listaEspera"></tbody>
+        </table>
+    </div>
+
+    <script>
+        function determinarSalinha(idade) {
+            const anos = parseInt(idade);
+            if (anos == 0 || anos == 1) return "Ninho (3 meses a 1 ano e 11 meses)";
+            if (anos >= 2 && anos <= 3) return "Arca (2 anos a 3 anos e 11 meses)";
+            if (anos >= 4 && anos <= 5) return "Reino (4 anos a 5 anos e 11 meses)";
+            if (anos >= 6 && anos <= 7) return "Safari (6 anos a 7 anos e 11 meses)";
+            if (anos >= 8 && anos <= 11) return "Conect (8 anos a 11 anos e 11 meses)";
+            return "Fora da faixa etária";
+        }
+
+        function carregarLista() {
+            const listaSalva = localStorage.getItem("listaEsperaData");
+            if (listaSalva) {
+                atualizarTabela();
+            }
+        }
+
+        function salvarLista(lista) {
+            localStorage.setItem("listaEsperaData", JSON.stringify(lista));
+        }
+
+        function adicionarNaLista() {
+            const responsavel = document.getElementById("responsavel").value.trim();
+            const whatsapp = document.getElementById("whatsapp").value.trim();
+            const idade = document.getElementById("idade").value;
+            
+            if (!responsavel || !whatsapp || !idade) {
+                alert("Por favor, preencha todos os campos.");
+                return;
+            }
+            
+            const salinha = determinarSalinha(idade);
+            let lista = JSON.parse(localStorage.getItem("listaEsperaData")) || [];
+            lista.push({ responsavel, whatsapp, idade, salinha, contatado: false, timestamp: Date.now() });
+            
+            lista.sort((a, b) => {
+                const ordemSalas = ["Ninho", "Arca", "Reino", "Safari", "Conect"];
+                return ordemSalas.indexOf(a.salinha.split(" ")[0]) - ordemSalas.indexOf(b.salinha.split(" ")[0]) || a.timestamp - b.timestamp;
+            });
+            
+            salvarLista(lista);
+            atualizarTabela();
+        }
+
+        function atualizarTabela() {
+            const tabela = document.getElementById("listaEspera");
+            tabela.innerHTML = "";
+            let lista = JSON.parse(localStorage.getItem("listaEsperaData")) || [];
+            lista.forEach((item, index) => {
+                const novaLinha = tabela.insertRow();
+                if (item.contatado) {
+                    novaLinha.classList.add("contatado");
+                }
+                novaLinha.innerHTML = `
+                    <td>${item.responsavel}</td>
+                    <td><a href="https://wa.me/55${item.whatsapp.replace(/\D/g, '')}" target="_blank">${item.whatsapp}</a></td>
+                    <td>${item.idade}</td>
+                    <td>${item.salinha}</td>
+                    <td><button onclick="marcarContato(${index})">✔️</button></td>
+                `;
+            });
+            salvarLista(lista);
+        }
+
+        function marcarContato(index) {
+            let lista = JSON.parse(localStorage.getItem("listaEsperaData")) || [];
+            lista[index].contatado = true;
+            salvarLista(lista);
+            atualizarTabela();
+        }
+
+        function limparCampos() {
+            document.getElementById("responsavel").value = "";
+            document.getElementById("whatsapp").value = "";
+            document.getElementById("idade").value = "";
+        }
+
+        function resetarLista() {
+            const senha = prompt("Digite a senha para resetar a lista:");
+            if (senha === "vk") {
+                localStorage.removeItem("listaEsperaData");
+                atualizarTabela();
+                alert("Lista resetada com sucesso!");
+            } else {
+                alert("Senha incorreta!");
+            }
+        }
+
+        window.onload = carregarLista;
+    </script>
+</body>
+</html>
